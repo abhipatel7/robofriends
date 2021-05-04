@@ -2,35 +2,42 @@ import React, {useEffect, useState} from 'react';
 import CardList from '../components/CardList';
 import SearchBox from '../components/SearchBox';
 import Scroll from '../components/Scroll';
-import ErrorBoundry from "../components/ErrorBoundry";
+import ErrorBoundary from "../components/ErrorBoundary";
 import './App.css';
+import { useDispatch, useSelector} from "react-redux";
+import {setSearchField, requestRobots} from "../action";
+
 
 const App = () => {
-    const [robots, setRobots] = useState([])
-    const [searchField, setSearchField] = useState('')
+    const searchField = useSelector(state => state.searchRobots.searchField)
+    const dispatch = useDispatch()
 
-    useEffect(() =>
-    {
-        fetch('https://jsonplaceholder.typicode.com/users')
-            .then(response => response.json())
-            .then(users => setRobots(users));
-    },[searchField])
+    const robots = useSelector(state => state.requestRobots.robots)
+    const isPending = useSelector(state => state.requestRobots.isPending)
+    const error = useSelector(state => state.requestRobots.error)
 
     const filteredRobots = robots.filter(robot => {
         return robot.name.toLowerCase().includes(searchField.toLowerCase());
     })
-    return !robots.length ?
+
+    const onSearchChange = (event) => dispatch(setSearchField(event.target.value))
+
+    const onRequestRobots = () => dispatch(requestRobots())
+
+    useEffect(() => {
+        onRequestRobots()
+    },[])
+
+    return isPending ?
         <h1>Loading</h1> :
         (
             <div className='tc'>
                 <h1 className='f1'>RoboFriends</h1>
-                <SearchBox searchChange={(event) => {
-                    setSearchField(event.target.value)
-                }}/>
+                <SearchBox searchChange={onSearchChange}/>
                 <Scroll>
-                    <ErrorBoundry>
+                    <ErrorBoundary>
                         <CardList robots={filteredRobots}/>
-                    </ErrorBoundry>
+                    </ErrorBoundary>
                 </Scroll>
             </div>
         );
